@@ -46,6 +46,7 @@ namespace BruteForcer
 
         public void SetDictionariesOfPasswords(char[] alphabet, int minLength, int maxLength, int numberOfCores = 1)
         {
+            //trasasa
             if(numberOfCores < 1)
             {
                 throw new ArgumentOutOfRangeException("numberOfCores");
