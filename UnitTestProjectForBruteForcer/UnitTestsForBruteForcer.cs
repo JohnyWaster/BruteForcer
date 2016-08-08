@@ -11,50 +11,19 @@ namespace UnitTestProjectForBruteForcer
     public class UnitTestsForBruteForcer
     {
         [TestMethod]
-        public void TestMethodForDictionaryBruteForcer()
-        {
-            IEnumerable<string> myPasswords = new string[3] { "1", "2", "3"};
-
-            IBruteForcer bforcer = new DictionaryBruteForcer(myPasswords);
-
-            var myPasswordsEnumerator = myPasswords.GetEnumerator();
-
-
-            Stopwatch t = new Stopwatch();
-
-            
-            t.Start();
-            while(bforcer.IsNotFinished == true)
-            {
-                var a = bforcer.GetNextValue();
-            }
-            t.Stop();
-            
-            var timeOfWhile = t.ElapsedTicks;
-
-            t.Restart();
-            foreach (var a in myPasswords)
-            {
-                var b = a;
-            }
-            t.Stop();
-            var timeOfForeach = t.ElapsedTicks;
-        }
-
-        [TestMethod]
         public void MakeDictionaryFromAlphabetTest()
         {
             char[] smallEnglishLetters = new char[26].Select((letter, i) => (char)('a' + i)).ToArray();
 
-            IEnumerable<string> myDict = DictionaryBruteForcer.MakeDictionaryOfPasswordsFromAlphabet(smallEnglishLetters, 2, 6);
+            IEnumerable<string> myDict = DictionaryBruteForcer.MakeDictionaryOfPasswordsFromAlphabet(smallEnglishLetters, 2, 5);
 
             long counter = 0;
             foreach(var pass in myDict)
             {
                 counter++;
-                if(pass == "zzzzzz")
+                if(pass == "zzzzz")
                 {
-                    Assert.AreEqual(Math.Pow(26, 2)+Math.Pow(26, 3) + Math.Pow(26, 4) +Math.Pow(26, 5) + Math.Pow(26,6), counter);
+                    Assert.AreEqual(Math.Pow(26, 2)+Math.Pow(26, 3) + Math.Pow(26, 4) +Math.Pow(26, 5), counter);
                 }
             }                   
         }
@@ -70,9 +39,7 @@ namespace UnitTestProjectForBruteForcer
 
             var rightValue = "xzasw";
 
-           // var foundValue = bf.BruteForce(a => a, a => a == rightValue);
-
-            var foundValue = bf.BruteForceSingle(a => a, a => a == rightValue);
+            var foundValue = bf.BruteForce(a => a, a => a == rightValue);
 
             Assert.AreEqual(foundValue, rightValue);
         }
@@ -96,9 +63,24 @@ namespace UnitTestProjectForBruteForcer
 
 
             //test of max password's last letter is not the last letter of alphabet
-            myDict = DictionaryBruteForcer.MakeDictionaryOfPasswordsFromAlphabetInRange(smallEnglishLetters, "aa", "ezzzzb");
+            myDict = DictionaryBruteForcer.MakeDictionaryOfPasswordsFromAlphabetInRange(smallEnglishLetters, "aa", "ezzzb");
 
-            Assert.AreEqual(71763460, myDict.Count());
+            Assert.AreEqual(Math.Pow(26, 2) + Math.Pow(26, 3) + 6* Math.Pow(26, 4) - 24, myDict.Count());
+        }
+
+        [TestMethod]
+        public void SetDictionariesOfPasswordsTest()
+        {
+            char[] smallEnglishLetters = new char[26].Select((letter, i) => (char)('a' + i)).ToArray();
+
+            int numberOfCores = 5;
+
+            //test of right dividing entire dictionary into parts
+            IList<IEnumerable<string>> myDict = MultiCoreDictionaryBruteForcer.MakeDictionariesOfPasswordsFromAlphabetForSomeCores(smallEnglishLetters, 2, 5, numberOfCores);
+
+            int wholeNumberOfPasswords = myDict.Sum(a => a.Count());
+
+            Assert.AreEqual(Math.Pow(26, 2) + Math.Pow(26, 3) + Math.Pow(26, 4) + Math.Pow(26, 5) + numberOfCores - 1 , wholeNumberOfPasswords);
         }
     }
 }

@@ -6,24 +6,9 @@ using System.Threading.Tasks;
 
 namespace BruteForcer
 {
-    public interface IBruteForcer
-    {
-        string GetNextValue();
-
-        bool IsNotFinished { get; }
-    }
-
     public class DictionaryBruteForcer : IBruteForcer
     {
-        private IEnumerable<string> _dictionaryWithPasswords;
-
-        private IEnumerator<string> _passEnumerator;
-
-        private bool _isNotFinished;
-
-        private string current;
-
-        private IList<IEnumerable<string>> _dictionariesForDifferentCores;
+        private IEnumerable<string> _dictionaryOfPasswords;
 
         /// <summary>
         /// Constructor, which sets  dictionary for look throw. But it does not allow to parallel work between some cores
@@ -31,142 +16,31 @@ namespace BruteForcer
         /// <param name="dictWithPasswords">dictionary, where password will be seeked</param>
         public DictionaryBruteForcer(IEnumerable<string> dictWithPasswords)
         {
-            if(dictWithPasswords == null)
+            if (dictWithPasswords == null)
             {
                 throw new ArgumentNullException("dictWithPasswords");
             }
 
-            _dictionaryWithPasswords = dictWithPasswords;
- 
-            _passEnumerator = _dictionaryWithPasswords.GetEnumerator();
-
-            _isNotFinished = _passEnumerator.MoveNext();
+            _dictionaryOfPasswords = dictWithPasswords;
         }
 
-
-        public void SetDictionariesOfPasswords(char[] alphabet, int minLength, int maxLength, int numberOfCores = 1)
-        {
-            //trasasa
-            if(numberOfCores < 1)
-            {
-                throw new ArgumentOutOfRangeException("numberOfCores");
-            }
-            if (minLength <= 0 || maxLength <= 0)
-            {
-                throw new ArgumentException("length of password should be greater then 0");
-            }
-            if (minLength > maxLength)
-            {
-                throw new ArgumentException("minLength can't be greater than maxLength");
-            }
-            if (alphabet == null)
-            {
-                throw new ArgumentNullException();
-            }
-
-            if (numberOfCores == 1)
-            {
-                _dictionariesForDifferentCores.Add(MakeDictionaryOfPasswordsFromAlphabet(alphabet, minLength, maxLength));
-            }
-
-            else
-            {
-                for(int i = 0; i < numberOfCores; ++i)
-                {
-
-                }
-            }
-        }
-
-        public bool IsNotFinished
-        {
-            get
-            {
-                return _isNotFinished;
-            }
-        }
-
-        public string GetNextValue()
-        {
-            current = _passEnumerator.Current;
-            _isNotFinished = _passEnumerator.MoveNext();
-
-            return current;
-        }
-
-        /// <summary>
-        /// go throw all values of dictionary and try each of them, using asynchronous attempt function
-        /// </summary>
-        /// <typeparam name="T">type of object, which is returned by attempt function and concieved by success predicate</typeparam>
-        /// <param name="AttemptOfPasswordAsync">func, which gets a word from dictionary and makes one attempt assynchronously, returns result of attemption of type T</param>
-        /// <param name="HasSuccess">predicate, which determines, if attempt was successful</param>
-        /// <returns>returns right password or null, if password is not found</returns>
-        public async Task<string> BruteForceAsync<T>(Func<string, Task<T>> AttemptOfPasswordAsync, Predicate<T> HasSuccess)
-        {
-            string rightPassword = null;
-
-            Parallel.ForEach(_dictionaryWithPasswords, async (password, state) =>
-                {
-                    T result = await AttemptOfPasswordAsync(password);
-
-                    if (HasSuccess(result) == true)
-                    {
-                        rightPassword = password;
-                        state.Break();
-                    }
-                }
-            );
-
-            return rightPassword;
-        }
-
-
-        public string BruteForceSingle<T>(Func<string, T> AttemptOfPassword, Predicate<T> HasSuccess)
-        {
-            string rightPassword = null;
-
-            foreach(var password in _dictionaryWithPasswords)
-            {
-                T result = AttemptOfPassword(password);
-
-                if (HasSuccess(result) == true)
-                {
-                    rightPassword = password;
-                    break;                
-                }
-            }
-
-            return rightPassword;
-        }
-
-        /// <summary>
-        /// go throw all values of dictionary and try each of them, using attempt function
-        /// </summary>
-        /// <typeparam name="T">type of object, which is returned by attempt function and concieved by success predicate</typeparam>
-        /// <param name="AttemptOfPassword">func, which gets a word from dictionary and makes one attempt, returns result of attemption of type T</param>
-        /// <param name="HasSuccess">predicate, which determines, if attempt was successful</param>
-        /// <returns>returns right password or null, if password is not found</returns>
         public string BruteForce<T>(Func<string, T> AttemptOfPassword, Predicate<T> HasSuccess)
         {
             string rightPassword = null;
 
-            Parallel.ForEach(_dictionaryWithPasswords, (password, state) =>
+            foreach (var password in _dictionaryOfPasswords)
             {
                 T result = AttemptOfPassword(password);
 
                 if (HasSuccess(result) == true)
                 {
                     rightPassword = password;
-                    state.Break();                
+                    break;
                 }
             }
-            );
 
             return rightPassword;
         }
-
-
-       
 
         /// <summary>
         /// generate all possible values of password of required length
@@ -176,16 +50,16 @@ namespace BruteForcer
         /// <param name="maxLength">max length of a password</param>
         /// <returns>dictionary of all appropriate words, number of them equals alphabet.Length**minLength+...+alphabet.Length**maxLength</returns>
         public static IEnumerable<string> MakeDictionaryOfPasswordsFromAlphabet(char[] alphabet, int minLength, int maxLength)
-        {        
-            if(minLength <= 0 || maxLength <= 0)
+        {
+            if (minLength <= 0 || maxLength <= 0)
             {
                 throw new ArgumentException("length of password should be greater then 0");
             }
-            if(minLength > maxLength)
+            if (minLength > maxLength)
             {
                 throw new ArgumentException("minLength can't be greater than maxLength");
-            }   
-            if(alphabet == null)
+            }
+            if (alphabet == null)
             {
                 throw new ArgumentNullException();
             }
@@ -220,18 +94,18 @@ namespace BruteForcer
                 {
                     //go throw all possible characters at last position
                     for (char k = minElem; k <= maxElem; ++k)
-                    {                    
+                    {
                         charPass[lastPosition] = k;
 
                         //make words from indexes
                         yield return new string(
-                            charPass.Select(a=>alphabet[a]).ToArray()
+                            charPass.Select(a => alphabet[a]).ToArray()
                             );
                     }
                     //when all values of last position were picked over
 
                     //for the last value
-                    if(charPass.SequenceEqual(maxPassword))
+                    if (charPass.SequenceEqual(maxPassword))
                     {
                         break;
                     }
@@ -244,7 +118,7 @@ namespace BruteForcer
                     {
                         //if maxElem at some position, make it minElem
                         charPass[lastPosition - j] = minElem;
-                        j++;                       
+                        j++;
                     }
 
                     //if not maxElem increment it
@@ -262,11 +136,11 @@ namespace BruteForcer
         /// <returns></returns>
         public static IEnumerable<string> MakeDictionaryOfPasswordsFromAlphabetInRange(char[] alphabet, string minPassword, string maxPassword)
         {
-            if(minPassword == null || maxPassword == null || alphabet == null)
+            if (minPassword == null || maxPassword == null || alphabet == null)
             {
                 throw new ArgumentNullException();
             }
-            if(maxPassword.CompareTo(minPassword) < 0)
+            if (maxPassword.CompareTo(minPassword) < 0)
             {
                 throw new ArgumentException("maxPassword should be greater than minPassword");
             }
@@ -288,7 +162,7 @@ namespace BruteForcer
 
                 if (currentLength == maxPassword.Length)
                 {
-                    maxCharPassword = maxPassword.ToCharArray().Select(a=>(char)new string(alphabet).IndexOf(a)).ToArray();
+                    maxCharPassword = maxPassword.ToCharArray().Select(a => (char)new string(alphabet).IndexOf(a)).ToArray();
                 }
 
 
@@ -327,13 +201,13 @@ namespace BruteForcer
                     }
                     //when all values of last position were picked over
                     minElemForCurrentPosition = minElem;
-                    
+
                     //for the last value
                     if (charPass[0] == maxCharPassword[0] && charPass.SequenceEqual(maxCharPassword))
                     {
                         break;
                     }
-                    
+
                     //counter for going throw all positions
                     int j = 0;
 
@@ -357,6 +231,6 @@ namespace BruteForcer
                     }
                 }
             }
-        }     
+        }
     }
 }

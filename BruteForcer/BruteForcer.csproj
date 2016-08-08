@@ -37,7 +37,9 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BruteForcer.cs" />
+    <Compile Include="IBruteForcer.cs" />
+    <Compile Include="DictionaryBruteForcer.cs" />
+    <Compile Include="MultiCoreDictionaryBruteForcer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
