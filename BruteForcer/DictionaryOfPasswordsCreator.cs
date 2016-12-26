@@ -341,17 +341,17 @@ namespace BruteForcer
             }
             if(alphabets.Count() == 0)
             {
-                throw new ArgumentException(nameof(alphabets) + " shoud contain at least one alphabet");
+                throw new ArgumentException(nameof(alphabets) + " should contain at least one alphabet");
             }
             foreach(var alph in alphabets)
             {
                 if(alph == null)
                 {
-                    throw new NullReferenceException(nameof(alphabets) + " shoud not contain null references");
+                    throw new NullReferenceException(nameof(alphabets) + " should not contain null references");
                 }
                 if(alph.Length == 0)
                 {
-                    throw new ArgumentException(nameof(alphabets) + " shoud not contain empty alphabets");
+                    throw new ArgumentException(nameof(alphabets) + " should not contain empty alphabets");
                 }
             }
 

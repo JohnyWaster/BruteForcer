@@ -13,7 +13,7 @@ using static NUnit.Framework.Assert;
 
 namespace UnitTestProjectForBruteForcer
 {
-    [TestFixture]
+    [TestClass]
     public class UnitTestsForBruteForcer
     {
         [Test]
@@ -24,14 +24,14 @@ namespace UnitTestProjectForBruteForcer
             IEnumerable<string> myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(smallEnglishLetters, 2, 5);
 
             long counter = 0;
-            foreach(var pass in myDict)
+            foreach (var pass in myDict)
             {
                 counter++;
-                if(pass == "zzzzz")
+                if (pass == "zzzzz")
                 {
-                    AreEqual(Math.Pow(26, 2)+Math.Pow(26, 3) + Math.Pow(26, 4) +Math.Pow(26, 5), counter);
+                    AreEqual(Math.Pow(26, 2) + Math.Pow(26, 3) + Math.Pow(26, 4) + Math.Pow(26, 5), counter);
                 }
-            }                   
+            }
         }
 
 
@@ -40,8 +40,8 @@ namespace UnitTestProjectForBruteForcer
         public void MakeDictionaryOfPasswordsFromAlphabetInRangeTest()
         {
             char[] smallEnglishLetters = new char[26].Select((letter, i) => (char)('a' + i)).ToArray();
-           
-            
+
+
             //test of equal length of min and max passwords
             IEnumerable<string> myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(smallEnglishLetters, "aa", "az");
 
@@ -57,7 +57,7 @@ namespace UnitTestProjectForBruteForcer
             //test of max password's last letter is not the last letter of alphabet
             myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(smallEnglishLetters, "aa", "ezzzb");
 
-            AreEqual(Math.Pow(26, 2) + Math.Pow(26, 3) + 6* Math.Pow(26, 4) - 24, myDict.Count());
+            AreEqual(Math.Pow(26, 2) + Math.Pow(26, 3) + 6 * Math.Pow(26, 4) - 24, myDict.Count());
 
             //test of letter not from alphabet
 
@@ -86,7 +86,7 @@ namespace UnitTestProjectForBruteForcer
 
             int wholeNumberOfPasswords = myDict.Sum(a => a.Count());
 
-            AreEqual(Math.Pow(26, 2) + Math.Pow(26, 3) + Math.Pow(26, 4) + Math.Pow(26, 5) + numberOfCores - 1 , wholeNumberOfPasswords);
+            AreEqual(Math.Pow(26, 2) + Math.Pow(26, 3) + Math.Pow(26, 4) + Math.Pow(26, 5) + numberOfCores - 1, wholeNumberOfPasswords);
 
 
             myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(smallEnglishLetters, 1, 1, numberOfCores);
@@ -111,14 +111,14 @@ namespace UnitTestProjectForBruteForcer
 
             AreEqual(rightValue, foundValue);
         }
-        
+
         [Test]
         public void MultiCoreTooMuchThreadsTest()
         {
             char[] smallEnglishLetters = new char[10].Select((letter, i) => (char)('a' + i)).ToArray();
 
             IList<IEnumerable<string>> myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(smallEnglishLetters, 1, 3, 1500000);
-            
+
             IBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
 
             var rightValue = "bc";
@@ -126,7 +126,7 @@ namespace UnitTestProjectForBruteForcer
             var foundValue = bf.BruteForceAsync(a => a, a => a == rightValue).Result;
 
             AreEqual(rightValue, foundValue);
-           
+
         }
 
         [Test]
@@ -191,7 +191,84 @@ namespace UnitTestProjectForBruteForcer
             AreEqual("13", rightLogin);
             AreEqual("45", rightPassword);
         }
-        
+
+
+        [TestMethod]
+        public void MakeDictionaryFromSomeAlphabets()
+        {
+            #region Vlidation Test
+
+            try
+            {
+                DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(null, 1, 1).Count();
+            }
+            catch(ArgumentNullException e)
+            {
+                Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(e.Message.Contains("alphabets"));
+            }
+
+            try
+            {
+                DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(new List<char[]>(), 1, 1).Count();
+            }
+            catch (ArgumentException e)
+            {
+                Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(e.Message.Contains("should contain at least one alphabet"));
+            }
+
+            
+            try
+            {
+                var alphabets = new List<char[]>();
+                alphabets.Add(null);
+                
+                DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 1, 1).Count();
+            }
+            catch (NullReferenceException e)
+            {
+                Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(e.Message.Contains(" should not contain null references"));
+            }
+
+
+            try
+            {
+                var alphabets = new List<char[]>();
+                alphabets.Add(new char[0]);
+
+                DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 1, 1).Count();
+            }
+            catch (ArgumentException e)
+            {
+                Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(e.Message.Contains(" should not contain empty alphabets"));
+            }
+
+            try
+            {
+                var alphabets = new List<char[]>();
+
+                alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+                DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, -1, 1).Count();
+            }
+            catch(ArgumentException e)
+            {
+                Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(e.Message.Contains(" should be positive numbers"));
+            }
+
+            try
+            {
+                List<char[]> alphabets = new List<char[]>();
+
+                alphabets.Add(DictionaryOfPasswordsCreator.Numbers);
+
+                DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 3, 1).Count();
+            }
+            catch (ArgumentException e)
+            {
+                Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(e.Message.Contains(" should not be greater"));
+            }
+            #endregion
+        }
+
     }
-    
 }
