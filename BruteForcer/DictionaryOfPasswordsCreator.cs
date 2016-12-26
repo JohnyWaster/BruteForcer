@@ -324,6 +324,37 @@ namespace BruteForcer
         /// <returns></returns>
         public static IEnumerable<string> MakeDictionaryFromSomeAlphabets(IEnumerable<char[]> alphabets, int minLength, int maxLength)
         {
+            //validation of input parameters
+            if(alphabets ==  null)
+            {
+                throw new ArgumentNullException(nameof(alphabets));
+            }
+            if(alphabets.Count() == 0)
+            {
+                throw new ArgumentException(nameof(alphabets) + " shoud contain at least one alphabet");
+            }
+            foreach(var alph in alphabets)
+            {
+                if(alph == null)
+                {
+                    throw new NullReferenceException(nameof(alphabets) + " shoud not contain null references");
+                }
+                if(alph.Length == 0)
+                {
+                    throw new ArgumentException(nameof(alphabets) + " shoud not contain empty alphabets");
+                }
+            }
+
+            if(minLength <= 0 || maxLength <= 0)
+            {
+                throw new ArgumentException(nameof(minLength) + " and " + nameof(maxLength) + " should be positive numbers");
+            }
+            if(minLength > maxLength)
+            {
+                throw new ArgumentException(nameof(minLength) + " should not be greater than " + nameof(maxLength));
+            }
+
+
             return null;
         } 
     }
