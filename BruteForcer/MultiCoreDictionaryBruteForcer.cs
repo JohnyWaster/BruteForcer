@@ -2,100 +2,221 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BruteForcer
 {
-    public class MultiCoreDictionaryBruteForcer : IBruteForcer
+    /// <summary>
+    /// Helps to make dictionary of passwords from alphabet and pick over them asynchronously
+    /// </summary>
+    public class MultiThreadDictionaryBruteForcer : IBruteForcer
     {
-        private IList<IEnumerable<string>> _dictionariesForDifferentCores;
+        private IList<IEnumerable<string>> _dictionariesForDifferentThreads;
+
+        public IList<IEnumerable<string>> DictionariesForDifferentThreads
+        {
+            get { return _dictionariesForDifferentThreads; }
+
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(DictionariesForDifferentThreads));
+                }
+
+                _dictionariesForDifferentThreads = value;
+            }
+        }
+
 
         /// <summary>
-        /// Constructor, which sets  dictionaries for look throw.
+        /// Constructor, which sets dictionaries for look throw.
         /// </summary>
-        /// <param name="dictWithPasswords">list of dictionaries, where password will be seeked</param>
-        public MultiCoreDictionaryBruteForcer(IList<IEnumerable<string>> listOfDictionaries)
+        /// <param name="listOfDictionaries">list of dictionaries, where password will be seeked</param>
+        public MultiThreadDictionaryBruteForcer(IList<IEnumerable<string>> listOfDictionaries)
         {
             if (listOfDictionaries == null)
             {
-                throw new ArgumentNullException("listOfDictionaries");
+                throw new ArgumentNullException(nameof(listOfDictionaries));
             }
 
             foreach(var dict in listOfDictionaries)
             {
                 if(dict == null)
                 {
-                    throw new ArgumentNullException("listOfDictionaries", "one of dictionaries is null");
+                    throw new ArgumentNullException(nameof(listOfDictionaries), "one of dictionaries is null");
                 }
             }
 
-            _dictionariesForDifferentCores = listOfDictionaries;
+            DictionariesForDifferentThreads = listOfDictionaries;
+        }
+
+        
+
+
+        /// <summary>
+        /// Pick over all possible passwords in asynchronous way
+        /// </summary>
+        /// <typeparam name="T">type of value, which is returned by function, which makes one effort of password, and consumed by predicate, which determines is effort successfull</typeparam>
+        /// <param name="attemptOfPassword">function, which makes one effort of password</param>
+        /// <param name="hasSuccess">predicate, which determines, if password is right</param>
+        /// <returns>right password or null, if all dictionary was picked over and right password was not found</returns>
+        public async Task<string> BruteForceAsync<T>(Func<string, T> attemptOfPassword, Predicate<T> hasSuccess)
+        {
+            if(attemptOfPassword == null)
+            {
+                throw new ArgumentNullException(nameof(attemptOfPassword));
+            }
+            if(hasSuccess == null)
+            {
+                throw new ArgumentNullException(nameof(hasSuccess));
+            }
+
+            //list for storing tasks for each thread
+            List<Task<string>> tasksForParticularThreads = new List<Task<string>>(DictionariesForDifferentThreads.Count);
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            //run picking over each dictionary in different threads
+            foreach (var dict in DictionariesForDifferentThreads)
+            {
+                tasksForParticularThreads.Add(Task.Run(() =>
+                {
+                    string rightPassword = null;
+                    
+                    foreach (var password in dict)
+                    {
+                        try
+                        {
+                            if(cts.Token.IsCancellationRequested)
+                            {
+                                break;
+                            }
+
+                            T result = attemptOfPassword(password);
+
+                            if (hasSuccess(result) == true)
+                            {
+                                rightPassword = password;
+                                break;
+                            }
+                        }
+                        catch(Exception e)
+                        {
+                            throw new Exception("error was occured during test of password " + password,e);
+                        }
+                    }
+
+                    return rightPassword;
+                }, cts.Token
+                ));
+            }
+
+            //task to return
+            Task<string> str = null;
+
+            //wait for finishing tasks
+            while (tasksForParticularThreads.Count > 0)
+            {
+                str = await Task.WhenAny(tasksForParticularThreads);
+
+                tasksForParticularThreads.Remove(str);
+
+                //if right password was found
+                if(str.Result != null)
+                {
+                    //cancel another tasks
+                    cts.Cancel();      
+                                                   
+                    return str.Result;
+                }
+            }
+
+            return str.Result;
         }
 
         /// <summary>
-        /// makes dictionaries of passwords for each core from alphabet
+        /// Pick over all possible passwords in asynchronous way
         /// </summary>
-        /// <param name="alphabet">set of characters, which can be included in password</param>
-        /// <param name="minLength">min length of password</param>
-        /// <param name="maxLength">max length of password</param>
-        /// <param name="numberOfCores">number of dictionaries for dividing entire dictionary of passwords, each dictionary for each core</param>
-        public static IList<IEnumerable<string>> MakeDictionariesOfPasswordsFromAlphabetForSomeCores(char[] alphabet, int minLength, int maxLength, int numberOfCores = 1)
+        /// <typeparam name="T">type of value, which is returned by function, which makes one effort of password, and consumed by predicate, which determines is effort successfull</typeparam>
+        /// <param name="AttemptOfPassword">function, which makes one effort of password</param>
+        /// <param name="HasSuccess">predicate, which determines, if password is right</param>
+        /// <param name="ct">token for cancellation</param>
+        /// <returns>right password or null, if all dictionary was picked over and right password was not found</returns>
+        public async Task<string> BruteForceAsync<T>(Func<string, T> AttemptOfPassword, Predicate<T> HasSuccess, CancellationToken ct)
         {
-            if (numberOfCores < 1)
+            if (AttemptOfPassword == null)
             {
-                throw new ArgumentOutOfRangeException("numberOfCores");
+                throw new ArgumentNullException(nameof(AttemptOfPassword));
             }
-            if (minLength <= 0 || maxLength <= 0)
+            if (HasSuccess == null)
             {
-                throw new ArgumentException("length of password should be greater then 0");
-            }
-            if (minLength > maxLength)
-            {
-                throw new ArgumentException("minLength can't be greater than maxLength");
-            }
-            if (alphabet == null)
-            {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(HasSuccess));
             }
 
-            var dictionariesForDifferentCores = new List<IEnumerable<string>>();
+            //list for storing tasks for each thread
+            List<Task<string>> tasksForParticularThreads = new List<Task<string>>(DictionariesForDifferentThreads.Count);
 
-            if (numberOfCores == 1)
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            //run picking over each dictionary in different threads
+            foreach (var dict in DictionariesForDifferentThreads)
             {
-                dictionariesForDifferentCores.Add(DictionaryBruteForcer.MakeDictionaryOfPasswordsFromAlphabet(alphabet, minLength, maxLength));
-            }
-
-            else
-            {
-                string minVal = new string(alphabet[0], minLength);
-                string maxVal = new string(alphabet[alphabet.Length / numberOfCores], maxLength);
-
-                for (int i = 1; i <= numberOfCores; ++i)
+                tasksForParticularThreads.Add(Task.Run(() =>
                 {
-                    dictionariesForDifferentCores.Add(DictionaryBruteForcer.MakeDictionaryOfPasswordsFromAlphabetInRange(alphabet, minVal, maxVal));
+                    string rightPassword = null;
 
-                    minVal = maxVal;
-                    if (i == numberOfCores)
+                    foreach (var password in dict)
                     {
-                        break;
+                        try
+                        {
+                            if (cts.Token.IsCancellationRequested || ct.IsCancellationRequested)
+                            {
+                                break;
+                            }
+
+                            T result = AttemptOfPassword(password);
+
+                            if (HasSuccess(result) == true)
+                            {
+                                rightPassword = password;
+                                break;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            cts.Cancel();
+                            throw new Exception("error was occured during test of password " + password, e);
+                        }
                     }
-                    if (i != numberOfCores - 1)
-                    {
-                        maxVal = new string(alphabet[(i + 1) * alphabet.Length / numberOfCores], maxLength);
-                    }
-                    else
-                    {
-                        maxVal = new string(alphabet[alphabet.Length - 1], maxLength);
-                    }
+
+                    return rightPassword;
+                }, cts.Token
+                ));
+            }
+
+            //task to return
+            Task<string> str = null;
+
+            //wait for finishing tasks
+            while (tasksForParticularThreads.Count > 0)
+            {
+                str = await Task.WhenAny(tasksForParticularThreads);
+
+                tasksForParticularThreads.Remove(str);
+
+                //if right password was found
+                if (str.Result != null)
+                {
+                    //cancel another tasks
+                    cts.Cancel();
+
+                    return str.Result;
                 }
             }
 
-            return dictionariesForDifferentCores;
-        }
-
-        public string BruteForce<T>(Func<string, T> AttemptOfPassword, Predicate<T> HasSuccess)
-        {
-            throw new NotImplementedException();
+            return str.Result;
         }
     }
 }

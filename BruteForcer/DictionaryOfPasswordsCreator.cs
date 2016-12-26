@@ -6,40 +6,105 @@ using System.Threading.Tasks;
 
 namespace BruteForcer
 {
-    public class DictionaryBruteForcer : IBruteForcer
+    public static class DictionaryOfPasswordsCreator
     {
-        private IEnumerable<string> _dictionaryOfPasswords;
-
-        /// <summary>
-        /// Constructor, which sets  dictionary for look throw. But it does not allow to parallel work between some cores
-        /// </summary>
-        /// <param name="dictWithPasswords">dictionary, where password will be seeked</param>
-        public DictionaryBruteForcer(IEnumerable<string> dictWithPasswords)
+        public static char[] SmallEnglishLetters
         {
-            if (dictWithPasswords == null)
-            {
-                throw new ArgumentNullException("dictWithPasswords");
-            }
-
-            _dictionaryOfPasswords = dictWithPasswords;
+            get { return new char[26].Select((letter, i) => (char)('a' + i)).ToArray(); }
         }
 
-        public string BruteForce<T>(Func<string, T> AttemptOfPassword, Predicate<T> HasSuccess)
+        public static char[] BigEnglishLetters
         {
-            string rightPassword = null;
+            get { return new char[26].Select((letter, i) => (char)('A' + i)).ToArray(); }
+        }
 
-            foreach (var password in _dictionaryOfPasswords)
+        public static char[] Numbers
+        {
+            get { return new char[10].Select((letter, i) => (char)('0' + i)).ToArray(); }
+        }
+
+        public static char[] SpecialSymbols
+        {
+            get
             {
-                T result = AttemptOfPassword(password);
+                var special1 = new char[16].Select((letter, i) => (char)(' ' + i));
 
-                if (HasSuccess(result) == true)
+                var special2 = new char[6].Select((letter, i) => (char)('[' + i));
+
+                var special3 = new char[4].Select((letter, i) => (char)('{' + i));
+
+                var special = special1.Concat(special2).Concat(special3);
+
+                return special.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// makes dictionaries of passwords for each core from alphabet
+        /// </summary>
+        /// <param name="alphabet">set of characters, which can be included in password</param>
+        /// <param name="minLength">min length of password</param>
+        /// <param name="maxLength">max length of password</param>
+        /// <param name="numberOfThreads">number of dictionaries for dividing entire dictionary of passwords, each dictionary for each core</param>
+        public static IList<IEnumerable<string>> MakeDictionariesForSomeThreads(char[] alphabet, int minLength, int maxLength, int numberOfThreads)
+        {
+            if (numberOfThreads < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(numberOfThreads));
+            }
+            if (minLength <= 0 || maxLength <= 0)
+            {
+                throw new ArgumentException("length of password should be greater then 0");
+            }
+            if (minLength > maxLength)
+            {
+                throw new ArgumentException("minLength can't be greater than maxLength");
+            }
+            if (alphabet == null)
+            {
+                throw new ArgumentNullException();
+            }
+
+            var dictionariesForDifferentCores = new List<IEnumerable<string>>();
+
+            if (numberOfThreads == 1)
+            {
+                dictionariesForDifferentCores.Add(MakeDictionaryFromAlphabet(alphabet, minLength, maxLength));
+            }
+
+            else
+            {
+                string minVal = new string(alphabet[0], minLength);
+                string maxVal = new string(alphabet[alphabet.Length / numberOfThreads], maxLength);
+
+                for (int i = 1; i <= numberOfThreads; ++i)
                 {
-                    rightPassword = password;
-                    break;
+                    try
+                    {
+                        dictionariesForDifferentCores.Add(MakeDictionaryFromAlphabet(alphabet, minVal, maxVal));
+                    }
+                    catch (ArgumentException)
+                    {
+                        throw new ArgumentException("Too much", nameof(numberOfThreads));
+                    }
+
+                    minVal = maxVal;
+                    if (i == numberOfThreads)
+                    {
+                        break;
+                    }
+                    if (i != numberOfThreads - 1)
+                    {
+                        maxVal = new string(alphabet[(i + 1) * alphabet.Length / numberOfThreads], maxLength);
+                    }
+                    else
+                    {
+                        maxVal = new string(alphabet[alphabet.Length - 1], maxLength);
+                    }
                 }
             }
 
-            return rightPassword;
+            return dictionariesForDifferentCores;
         }
 
         /// <summary>
@@ -49,7 +114,7 @@ namespace BruteForcer
         /// <param name="minLength">min length of a password</param>
         /// <param name="maxLength">max length of a password</param>
         /// <returns>dictionary of all appropriate words, number of them equals alphabet.Length**minLength+...+alphabet.Length**maxLength</returns>
-        public static IEnumerable<string> MakeDictionaryOfPasswordsFromAlphabet(char[] alphabet, int minLength, int maxLength)
+        public static IEnumerable<string> MakeDictionaryFromAlphabet(char[] alphabet, int minLength, int maxLength)
         {
             if (minLength <= 0 || maxLength <= 0)
             {
@@ -128,19 +193,33 @@ namespace BruteForcer
         }
 
         /// <summary>
-        /// generate all possible values of password from alphabet in range between minPassword and maxPassword
+        /// Generate all possible values of password from alphabet in range between minPassword and maxPassword
         /// </summary>
         /// <param name="alphabet">set of characters, which can be included in password</param>
         /// <param name="minPassword">min value of password</param>
         /// <param name="maxPassword">max value of password</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         /// <returns></returns>
-        public static IEnumerable<string> MakeDictionaryOfPasswordsFromAlphabetInRange(char[] alphabet, string minPassword, string maxPassword)
+        public static IEnumerable<string> MakeDictionaryFromAlphabet(char[] alphabet, string minPassword, string maxPassword)
         {
             if (minPassword == null || maxPassword == null || alphabet == null)
             {
                 throw new ArgumentNullException();
             }
-            if (maxPassword.CompareTo(minPassword) < 0)
+
+            //find letters not from alphabet in minPassword and maxPassword
+            var notMatchedLetters = from letter in minPassword.ToCharArray().Concat(maxPassword.ToCharArray())
+                where !alphabet.Contains(letter)
+                select letter;
+
+            if (notMatchedLetters.Any())
+            {
+                throw new ArgumentException("Letters not from alphabet where found", notMatchedLetters.First(c => true).ToString());
+            }
+
+
+            if (String.Compare(maxPassword, minPassword, StringComparison.Ordinal) < 0)
             {
                 throw new ArgumentException("maxPassword should be greater than minPassword");
             }
@@ -232,5 +311,20 @@ namespace BruteForcer
                 }
             }
         }
+
+        /// <summary>
+        /// Generate all possible values of password, where letters at each position can be from corresponding alphabets.
+        /// If number of alphabets less than maxLength, last alphabet is used for the rest of letters.
+        /// If number of alphabets greater than maxLength, rest of alphabets are not used.
+        /// If alphabets contain only one alphabet, method is equal to MakeDictionaryFromAlphabet.
+        /// </summary>
+        /// <param name="alphabets">Set of alphabets, each alphabet is using for corresponding position in password</param>
+        /// <param name="minLength">Minimal length of password</param>
+        /// <param name="maxLength">Maximum length of password.</param>
+        /// <returns></returns>
+        public static IEnumerable<string> MakeDictionaryFromSomeAlphabets(IEnumerable<char[]> alphabets, int minLength, int maxLength)
+        {
+            return null;
+        } 
     }
 }

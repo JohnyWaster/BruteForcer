@@ -8,6 +8,6 @@ namespace BruteForcer
 {
     public interface IBruteForcer
     {
-        string BruteForce<T>(Func<string, T> AttemptOfPassword, Predicate<T> HasSuccess);
+        Task<string> BruteForceAsync<T>(Func<string, T> attemptOfPassword, Predicate<T> hasSuccess);
     }    
 }
