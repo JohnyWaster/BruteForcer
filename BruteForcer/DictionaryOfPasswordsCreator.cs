@@ -496,7 +496,7 @@ namespace BruteForcer
             char maxElem = (char)(len - 1);
 
             char minElem = (char)0;
-
+            
 
             //go throw all possible lengthes of password
             for (int currentLength = minLength; currentLength <= maxLength; ++currentLength)
@@ -544,6 +544,148 @@ namespace BruteForcer
 
                     //go throw all positions, check if overflow
                     while (charPass[lastPosition - j] == maxElem)
+                    {
+                        //if maxElem at some position, make it minElem
+                        charPass[lastPosition - j] = minElem;
+                        j++;
+                    }
+
+                    //if not maxElem increment it
+                    charPass[lastPosition - j]++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generate all possible values of password, where letters at each position can be from corresponding alphabets, which contain given substring.
+        /// It means, than 1-st alphabet is used for letter at 1-st position, 2-nd alphabet for 2-nd position of password, etc...
+        /// If number of alphabets less than maxLength, last alphabet is used for the rest of letters.
+        /// If number of alphabets greater than maxLength, rest of alphabets are not used.
+        /// If alphabets contain only one alphabet, method is equal to MakeDictionaryFromAlphabet.
+        /// </summary>
+        /// <param name="alphabets">Set of alphabets, each alphabet is using for corresponding position in password</param>
+        /// <param name="minLength">Minimal length of password</param>
+        /// <param name="maxLength">Maximum length of password.</param>
+        /// <param name="subString">substring, which should be included in password</param>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NullReferenceException"></exception>
+        /// <returns></returns>
+        public static IEnumerable<string> MakeDictionaryFromSomeAlphabets(IList<char[]> alphabets, int minLength, int maxLength, string subString)
+        {
+            #region Validation of input parameters
+            if (alphabets == null)
+            {
+                throw new ArgumentNullException(nameof(alphabets));
+            }
+            if (alphabets.Count() == 0)
+            {
+                throw new ArgumentException(nameof(alphabets) + " should contain at least one alphabet");
+            }
+            foreach (var alph in alphabets)
+            {
+                if (alph == null)
+                {
+                    throw new NullReferenceException(nameof(alphabets) + " should not contain null references");
+                }
+                if (alph.Length == 0)
+                {
+                    throw new ArgumentException(nameof(alphabets) + " should not contain empty alphabets");
+                }
+            }
+
+            if (minLength <= 0 || maxLength <= 0)
+            {
+                throw new ArgumentException(nameof(minLength) + " and " + nameof(maxLength) + " should be positive numbers");
+            }
+            if (minLength > maxLength)
+            {
+                throw new ArgumentException(nameof(minLength) + " should not be greater than " + nameof(maxLength));
+            }
+            if (subString == null)
+            {
+                throw new ArgumentNullException(nameof(subString));
+            }
+            #endregion
+
+            #region Remember min and max elems for each position and complete alphabets, if required 
+            //we will work with indexes of alphabet, only at finish we transform them into letters
+
+            //remember max elem of each alphabet
+            List<char> maxElements = new List<char>();
+
+            foreach (var alph in alphabets)
+            {
+                maxElements.Add((char)(alph.Length - 1));
+            }
+
+            //if number of alphabets less than maxLength
+            if (maxElements.Count < maxLength)
+            {
+                var lastMaxElem = maxElements.Last();
+
+                //in this case use last alphabet for the rest letters
+                while (maxElements.Count != maxLength)
+                {
+                    maxElements.Add(lastMaxElem);
+
+                    alphabets.Add(alphabets.Last());
+                }
+            }
+
+            //min elem of each alphabet is 0 (because we work with indexes)
+            var minElem = (char)0;
+
+
+            #endregion
+
+
+            //go throw all possible lengthes of password
+            for (int currentLength = minLength; currentLength <= maxLength; ++currentLength)
+            {
+                int lastPosition = currentLength - 1;
+
+                //finish when attain max value
+                char[] maxPassword = maxElements.Take(currentLength).ToArray();
+
+                //begin from the smallest value
+                char[] minPassword = new string(minElem, currentLength).ToCharArray();
+
+                //current password 
+                char[] charPass = minPassword;
+
+
+                //go throw all possible values of charPass, while attain max value
+                while (!charPass.SequenceEqual(maxPassword))
+                {
+                    //go throw all possible characters at last position
+                    for (char k = minElem; k <= maxPassword[lastPosition]; ++k)
+                    {
+                        charPass[lastPosition] = k;
+
+                        //make words from indexes
+                        var password = new string(
+                            charPass.Select((a, i) => alphabets[i][a]).ToArray()
+                            );
+                        if(password.Contains(subString))
+                        {
+                            yield return password;
+                        }
+                        
+                    }
+                    //when all values of last position were picked over
+
+                    //for the last value
+                    if (charPass.SequenceEqual(maxPassword))
+                    {
+                        break;
+                    }
+
+                    //counter for going throw all positions
+                    int j = 0;
+
+                    //go throw all positions, check if overflow
+                    while (charPass[lastPosition - j] == maxElements[lastPosition - j])
                     {
                         //if maxElem at some position, make it minElem
                         charPass[lastPosition - j] = minElem;

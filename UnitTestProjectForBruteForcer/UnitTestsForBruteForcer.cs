@@ -128,7 +128,7 @@ namespace UnitTestProjectForBruteForcer
             AreEqual(rightValue, foundValue);
 
         }
-
+        /*
         [Test]
         public void SiteAuthorizationTest()
         {
@@ -191,11 +191,12 @@ namespace UnitTestProjectForBruteForcer
             AreEqual("13", rightLogin);
             AreEqual("45", rightPassword);
         }
-
+        */
 
         [Test]
         public void MakeDictionaryFromSomeAlphabets()
         {
+            
             #region Validation Tests
 
             try
@@ -327,7 +328,7 @@ namespace UnitTestProjectForBruteForcer
             AreEqual(Math.Pow(26, 1) + 26 * 10 + Math.Pow(10, 2) * 26, DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alph3, 1, 3).Count());
 
             #endregion
-
+            
             var alphs = new List<char[]>();
 
             alphs.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
@@ -345,6 +346,7 @@ namespace UnitTestProjectForBruteForcer
             var myPasses = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphs, 6, 6);
 
             AreEqual(26*10*26, myPasses.Count(a => a.Contains("aa3")));
+            
         }
 
 
@@ -360,6 +362,28 @@ namespace UnitTestProjectForBruteForcer
             var dict1 = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "1111");
 
             AreEqual(0, dict1.Count());
+        }
+
+        [Test]
+        public void MakeDictionaryFromSomeAlphabetsWithSubstringTest()
+        {
+            var alphs = new List<char[]>();
+
+            alphs.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alphs.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alphs.Add(DictionaryOfPasswordsCreator.SpecialSymbols);
+
+            alphs.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+            alphs.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+            alphs.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            var myPasses = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphs, 6, 6, "aa3");
+
+            AreEqual(26 * 10 * 26, myPasses.Count());
         }
     }
 }
