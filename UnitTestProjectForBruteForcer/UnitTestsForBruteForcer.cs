@@ -327,7 +327,39 @@ namespace UnitTestProjectForBruteForcer
             AreEqual(Math.Pow(26, 1) + 26 * 10 + Math.Pow(10, 2) * 26, DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alph3, 1, 3).Count());
 
             #endregion
+
+            var alphs = new List<char[]>();
+
+            alphs.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alphs.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alphs.Add(DictionaryOfPasswordsCreator.SpecialSymbols);
+
+            alphs.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+            alphs.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+            alphs.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            var myPasses = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphs, 6, 6);
+
+            AreEqual(26*10*26, myPasses.Count(a => a.Contains("aa3")));
         }
 
+
+        [Test]
+        public void MakeDictionaryWithSubstringTest()
+        {
+            var alph = DictionaryOfPasswordsCreator.Numbers;
+
+            var dict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "11");
+
+            AreEqual(20, dict.Count());//111 11 x11 11x
+
+            var dict1 = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "1111");
+
+            AreEqual(0, dict1.Count());
+        }
     }
 }
