@@ -13,7 +13,7 @@ using static NUnit.Framework.Assert;
 
 namespace UnitTestProjectForBruteForcer
 {
-    [TestClass]
+    [TestFixture]
     public class UnitTestsForBruteForcer
     {
         [Test]
@@ -193,10 +193,10 @@ namespace UnitTestProjectForBruteForcer
         }
 
 
-        [TestMethod]
+        [Test]
         public void MakeDictionaryFromSomeAlphabets()
         {
-            #region Vlidation Test
+            #region Validation Tests
 
             try
             {
@@ -267,6 +267,65 @@ namespace UnitTestProjectForBruteForcer
             {
                 Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(e.Message.Contains(" should not be greater"));
             }
+            #endregion
+
+            #region One alphabet test
+
+            var alph = new List<char[]>();
+            
+            alph.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            var myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alph, 1, 3);
+
+            AreEqual(Math.Pow(26,1) + Math.Pow(26, 2) + Math.Pow(26, 3), myDict.Count());
+
+            #endregion
+
+            #region Number of alphabets is equal to maxLength
+
+            var alph1 = new List<char[]>();
+
+            alph1.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alph1.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alph1.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            AreEqual(Math.Pow(26, 1) + Math.Pow(26, 2) + Math.Pow(26, 2)*10, DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alph1, 1, 3).Count());
+
+            #endregion
+
+            #region Number of alphabets less than maxLength
+
+            var alph2 = new List<char[]>();
+
+            alph2.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alph2.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            AreEqual(Math.Pow(26, 1) + 26*10 + Math.Pow(10, 2) * 26, DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alph2, 1, 3).Count());
+
+
+            AreEqual(Math.Pow(10, 3) * 26 + Math.Pow(10, 2) * 26, DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alph2, 3, 4).Count());
+
+            #endregion
+
+            #region Number of alphabets greater than maxLength
+
+            var alph3 = new List<char[]>();
+
+            alph3.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alph3.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alph3.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alph3.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alph3.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+            AreEqual(Math.Pow(26, 1) + 26 * 10 + Math.Pow(10, 2) * 26, DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alph3, 1, 3).Count());
+
             #endregion
         }
 
