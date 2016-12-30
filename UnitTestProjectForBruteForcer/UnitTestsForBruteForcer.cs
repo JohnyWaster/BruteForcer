@@ -117,7 +117,7 @@ namespace UnitTestProjectForBruteForcer
         {
             char[] smallEnglishLetters = new char[10].Select((letter, i) => (char)('a' + i)).ToArray();
 
-            IList<IEnumerable<string>> myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(smallEnglishLetters, 1, 3, 1500000);
+            IList<IEnumerable<string>> myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(smallEnglishLetters, 1, 3, 15000);
 
             IBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
 
@@ -328,7 +328,7 @@ namespace UnitTestProjectForBruteForcer
             AreEqual(Math.Pow(26, 1) + 26 * 10 + Math.Pow(10, 2) * 26, DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alph3, 1, 3).Count());
 
             #endregion
-            
+            /*
             var alphs = new List<char[]>();
 
             alphs.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
@@ -346,7 +346,7 @@ namespace UnitTestProjectForBruteForcer
             var myPasses = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphs, 6, 6);
 
             AreEqual(26*10*26, myPasses.Count(a => a.Contains("aa3")));
-            
+            */
         }
 
 
@@ -355,9 +355,59 @@ namespace UnitTestProjectForBruteForcer
         {
             var alph = DictionaryOfPasswordsCreator.Numbers;
 
-            var dict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "11");
+            #region Validation tests
 
-            AreEqual(20, dict.Count());//111 11 x11 11x
+            try
+            {
+                DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(null, 1, 3, "");
+            }
+            catch (ArgumentNullException e)
+            {               
+                IsTrue(e.Message.Contains("alphabet"));
+            }
+
+            try
+            {
+                DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, null);
+            }
+            catch (ArgumentNullException e)
+            {
+                IsTrue(e.Message.Contains("subString"));
+            }
+
+            try
+            {
+                DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 0, "");
+            }
+            catch (ArgumentException e)
+            {
+                IsTrue(e.Message.Contains("length of password should be greater then 0"));
+            }
+
+            try
+            {
+                DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 5, 3, "");
+            }
+            catch (ArgumentException e)
+            {
+                IsTrue(e.Message.Contains("minLength can't be greater than maxLength"));
+            }
+
+            try
+            {
+                DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "");
+            }
+            catch (ArgumentException e)
+            {
+                IsTrue(e.Message.Contains("subString should not be empty"));
+            }
+            
+            #endregion
+
+
+            var dict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 7, "1234");
+
+            AreEqual(1 + 320 + 1000 * 4, dict.Count());//111 11 x11 11x
 
             var dict1 = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "1111");
 
@@ -367,23 +417,17 @@ namespace UnitTestProjectForBruteForcer
         [Test]
         public void MakeDictionaryFromSomeAlphabetsWithSubstringTest()
         {
-            var alphs = new List<char[]>();
+            var alph = DictionaryOfPasswordsCreator.Numbers;
 
-            alphs.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+            var dict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 7);
 
-            alphs.Add(DictionaryOfPasswordsCreator.Numbers);
+            AreEqual(1 + 320 + 1000 * 4, dict.Count(a => a.Contains("1234")));//111 11 x11 11x
 
-            alphs.Add(DictionaryOfPasswordsCreator.SpecialSymbols);
+            var dict1 = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "1111");
 
-            alphs.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
-
-            alphs.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
-
-            alphs.Add(DictionaryOfPasswordsCreator.Numbers);
-
-            var myPasses = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphs, 6, 6, "aa3");
-
-            AreEqual(26 * 10 * 26, myPasses.Count());
+            AreEqual(0, dict1.Count());
         }
+
+        
     }
 }

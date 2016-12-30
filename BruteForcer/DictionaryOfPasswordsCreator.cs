@@ -52,9 +52,18 @@ namespace BruteForcer
             {
                 throw new ArgumentOutOfRangeException(nameof(numberOfThreads));
             }
-            if (minLength <= 0 || maxLength <= 0)
+            if (minLength < 0 || maxLength < 0)
             {
-                throw new ArgumentException("length of password should be greater then 0");
+                throw new ArgumentException("length of password should be nonnegative");
+            }
+            //in this case we don't have anything to return
+            if (minLength == 0 && maxLength == 0)
+            {
+                return new List<IEnumerable<string>>();
+            }
+            if (minLength == 0)
+            {
+                minLength = 1;
             }
             if (minLength > maxLength)
             {
@@ -117,22 +126,34 @@ namespace BruteForcer
         /// <returns>dictionary of all appropriate words, number of them equals alphabet.Length**minLength+...+alphabet.Length**maxLength</returns>
         public static IEnumerable<string> MakeDictionaryFromAlphabet(char[] alphabet, int minLength, int maxLength)
         {
-            if (minLength <= 0 || maxLength <= 0)
+            #region Validation of input parameters
+            if (minLength < 0 || maxLength < 0)
             {
-                throw new ArgumentException("length of password should be greater then 0");
+                throw new ArgumentException("length of password should not be negative");
             }
             if (minLength > maxLength)
             {
                 throw new ArgumentException("minLength can't be greater than maxLength");
             }
+            //in this case we don't have anything to return
+            if (minLength == 0 && maxLength == 0)
+            {
+                yield break;
+            }
+            if (minLength == 0)
+            {
+                minLength = 1;
+            }
+
             if (alphabet == null)
             {
                 throw new ArgumentNullException();
             }
-            if(alphabet.Length == 0)
+            if (alphabet.Length == 0)
             {
                 throw new ArgumentException(nameof(alphabet) + " should contain at least one element");
             }
+            #endregion
 
             //if alphabet has duplicates remove them
             alphabet = alphabet.Distinct().ToArray();
@@ -340,7 +361,7 @@ namespace BruteForcer
             {
                 throw new ArgumentNullException(nameof(alphabets));
             }
-            if(alphabets.Count() == 0)
+            if(!alphabets.Any())
             {
                 throw new ArgumentException(nameof(alphabets) + " should contain at least one alphabet");
             }
@@ -356,7 +377,7 @@ namespace BruteForcer
                 }
             }
 
-            if(minLength <= 0 || maxLength <= 0)
+            if(minLength < 0 || maxLength < 0)
             {
                 throw new ArgumentException(nameof(minLength) + " and " + nameof(maxLength) + " should be positive numbers");
             }
@@ -364,6 +385,16 @@ namespace BruteForcer
             {
                 throw new ArgumentException(nameof(minLength) + " should not be greater than " + nameof(maxLength));
             }
+            //in this case we don't have anything to return
+            if (minLength == 0 && maxLength == 0)
+            {
+                yield break;
+            }
+            if (minLength == 0)
+            {
+                minLength = 1;
+            }
+
             #endregion
 
             #region Remember min and max elems for each position and complete alphabets, if required 
@@ -463,13 +494,22 @@ namespace BruteForcer
         {
             #region Validation input parameters
 
-            if (minLength <= 0 || maxLength <= 0)
+            if (minLength < 0 || maxLength < 0)
             {
                 throw new ArgumentException("length of password should be greater then 0");
             }
             if (minLength > maxLength)
             {
                 throw new ArgumentException("minLength can't be greater than maxLength");
+            }
+            //in this case we don't have anything to return
+            if (minLength == 0 && maxLength == 0)
+            {
+                yield break;
+            }
+            if (minLength == 0)
+            {
+                minLength = 1;
             }
             if (alphabet == null)
             {
@@ -484,74 +524,76 @@ namespace BruteForcer
             {
                 throw new ArgumentNullException(nameof(subString));
             }
+            if (subString == "")
+            {
+                throw new ArgumentException(nameof(subString) + " shoud not be empty");
+            }
+
+            //if substring length is greater then minlength, minlength of password will be at least substring length
+            minLength = Math.Max(minLength, subString.Length);
+
+            //if substring length is greater then maxlength, we don't have anything to return
+            if (subString.Length > maxLength)
+            {
+                yield break;
+            }
+
+            //find letters not from alphabet in substring
+            var notMatchedLetters = from letter in subString.ToCharArray()
+                                    where !alphabet.Contains(letter)
+                                    select letter;
+
+            if (notMatchedLetters.Any())
+            {
+                yield break;
+            }
 
             #endregion
-
-            //if alphabet has duplicates remove them
-            alphabet = alphabet.Distinct().ToArray();
-
-            int len = alphabet.Length;
-
-            //we will work with indexes of alphabet, only at finish we transform them into letters
-            char maxElem = (char)(len - 1);
-
-            char minElem = (char)0;
-            
 
             //go throw all possible lengthes of password
             for (int currentLength = minLength; currentLength <= maxLength; ++currentLength)
             {
-                int lastPosition = currentLength - 1;
+                var restOfPassword = currentLength - subString.Length;
 
-                //finish when attain max value
-                char[] maxPassword = new string(maxElem, currentLength).ToCharArray();
-
-                //begin from the smallest value
-                char[] minPassword = new string(minElem, currentLength).ToCharArray();
-
-                //current password 
-                char[] charPass = minPassword;
-
-
-                //go throw all possible values of charPass, while attain max value
-                while (!charPass.SequenceEqual(maxPassword))
+                //push substring throw password with current length
+                for (int subStringStart = 0; subStringStart < restOfPassword + 1; subStringStart++)
                 {
-                    //go throw all possible characters at last position
-                    for (char k = minElem; k <= maxElem; ++k)
+
+                    //if we don't have left part
+                    if (subStringStart == 0)
                     {
-                        charPass[lastPosition] = k;
-
-                        //make words from indexes
-                        var password = new string(
-                            charPass.Select(a => alphabet[a]).ToArray()
-                            );
-
-                        if (password.Contains(subString))
+                        //if password equals to substrinig
+                        if (currentLength == subString.Length)
                         {
-                            yield return password;
+                            yield return subString;
+                        }
+
+                        //pick over part of password to the right from substring
+                        foreach (var rightPart in MakeDictionaryFromAlphabet(alphabet, restOfPassword - subStringStart, restOfPassword - subStringStart))
+                        {
+                            yield return subString + rightPart;
                         }
                     }
-                    //when all values of last position were picked over
 
-                    //for the last value
-                    if (charPass.SequenceEqual(maxPassword))
+                    //pick over part of password to the left from substring
+                    foreach (var leftPart in MakeDictionaryFromAlphabet(alphabet, subStringStart, subStringStart))
                     {
-                        break;
+                        //pick over part of password to the right from substring
+                        foreach (var rightPart in MakeDictionaryFromAlphabet(alphabet, restOfPassword - subStringStart, restOfPassword - subStringStart))
+                        {
+                            yield return leftPart + subString + rightPart;
+                        }
                     }
 
-                    //counter for going throw all positions
-                    int j = 0;
-
-                    //go throw all positions, check if overflow
-                    while (charPass[lastPosition - j] == maxElem)
+                    //if we don't have right part
+                    if (subStringStart == restOfPassword)
                     {
-                        //if maxElem at some position, make it minElem
-                        charPass[lastPosition - j] = minElem;
-                        j++;
+                        //pick over part of password to the left from substring
+                        foreach (var leftPart in MakeDictionaryFromAlphabet(alphabet, subStringStart, subStringStart))
+                        {
+                            yield return leftPart + subString;
+                        }
                     }
-
-                    //if not maxElem increment it
-                    charPass[lastPosition - j]++;
                 }
             }
         }
@@ -594,13 +636,22 @@ namespace BruteForcer
                 }
             }
 
-            if (minLength <= 0 || maxLength <= 0)
+            if (minLength < 0 || maxLength < 0)
             {
                 throw new ArgumentException(nameof(minLength) + " and " + nameof(maxLength) + " should be positive numbers");
             }
             if (minLength > maxLength)
             {
                 throw new ArgumentException(nameof(minLength) + " should not be greater than " + nameof(maxLength));
+            }
+            //in this case we don't have anything to return
+            if (minLength == 0 && maxLength == 0)
+            {
+                yield break;
+            }
+            if (minLength == 0)
+            {
+                minLength = 1;
             }
             if (subString == null)
             {
