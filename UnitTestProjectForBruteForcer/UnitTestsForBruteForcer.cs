@@ -417,17 +417,41 @@ namespace UnitTestProjectForBruteForcer
         [Test]
         public void MakeDictionaryFromSomeAlphabetsWithSubstringTest()
         {
+            IList<char[]> alphabets = new List<char[]>();
+
             var alph = DictionaryOfPasswordsCreator.Numbers;
 
-            var dict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 7);
+            alphabets.Add(alph);
 
-            AreEqual(1 + 320 + 1000 * 4, dict.Count(a => a.Contains("1234")));//111 11 x11 11x
+            var dict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 1, 7, "1234");
 
-            var dict1 = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "1111");
+            AreEqual(1 + 320 + 1000 * 4, dict.Count());
 
-            AreEqual(0, dict1.Count());
-        }
+            dict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alph, 1, 3, "1111");
 
-        
+            AreEqual(0, dict.Count());
+
+            alphabets = new List<char[]>();
+
+            alphabets.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            dict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 1, 7, "1ZZ");
+
+            AreEqual(26 * 10 * 26 * 26 * 2 + 26 * 10 * 26 + 26 * 10 + 26 + 1, dict.Count());
+
+            dict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 3, 7, "1A");
+
+            AreEqual(26 * 26 * 10 * 26 * 26 * 2 + 26 * 26 * 10 * 26 * 2 + 26 * 26 * 10 + 26 * 26 + 26, dict.Count());
+        }       
     }
 }
