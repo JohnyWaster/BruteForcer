@@ -53,6 +53,11 @@ namespace UnitTestProjectForBruteForcer
 
             AreEqual(24, myDict.Count());
 
+            //test of min password's last letter is not the first letter of alphabet
+            myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(smallEnglishLetters, "ac", "bn");
+
+            AreEqual(38, myDict.Count());
+
 
             //test of max password's last letter is not the last letter of alphabet
             myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(smallEnglishLetters, "aa", "ezzzb");
@@ -452,6 +457,48 @@ namespace UnitTestProjectForBruteForcer
             dict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 3, 7, "1A");
 
             AreEqual(26 * 26 * 10 * 26 * 26 * 2 + 26 * 26 * 10 * 26 * 2 + 26 * 26 * 10 + 26 * 26 + 26, dict.Count());
-        }       
+        }
+
+        [Test]
+        public void MakeDictionatyFromSomeAlphabetsInRangeTest()
+        {
+            IList<char[]> alphabets = new List<char[]>();
+
+            var alph = DictionaryOfPasswordsCreator.SmallEnglishLetters;
+
+            alphabets.Add(alph);
+
+            //test of equal length of min and max passwords
+            IEnumerable<string> myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, "aa", "az");
+
+            AreEqual(26, myDict.Count());
+
+
+            //test of min password's last letter is not the first letter of alphabet
+            myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, "ac", "az");
+
+            AreEqual(24, myDict.Count());
+
+            AreEqual("ae", myDict.ElementAt(2));
+
+
+            //test of max password's last letter is not the last letter of alphabet
+            myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, "aa", "ezzzb");
+
+            AreEqual(Math.Pow(26, 2) + Math.Pow(26, 3) + 6 * Math.Pow(26, 4) - 24, myDict.Count());
+
+            //test of letter not from alphabet
+
+            myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, "Aa", "e1zzb");
+
+            try
+            {
+                myDict.Count();
+            }
+            catch (ArgumentException e)
+            {
+                IsTrue(e.Message.Contains("can not be obtained"));
+            }
+        }
     }
 }
