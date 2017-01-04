@@ -31,7 +31,7 @@ namespace BruteForcer
 
 
         /// <summary>
-        /// Constructor, which sets dictionaries for look throw.
+        /// Constructor, which sets dictionaries for look through.
         /// </summary>
         /// <param name="listOfDictionaries">list of dictionaries, where password will be seeked</param>
         public MultiThreadDictionaryBruteForcer(IList<IEnumerable<string>> listOfDictionaries)
@@ -50,6 +50,23 @@ namespace BruteForcer
             }
 
             DictionariesForDifferentThreads = listOfDictionaries;
+        }
+
+
+        /// <summary>
+        /// Constructor, which sets dictionary for look through for one thread.
+        /// </summary>
+        /// <param name="dictionary">dictionary, where password will be seeked.</param>
+        public MultiThreadDictionaryBruteForcer(IEnumerable<string> dictionary)
+        {
+            if (dictionary == null)
+            {
+                throw new ArgumentNullException(nameof(dictionary));
+            }
+
+            DictionariesForDifferentThreads = new List<IEnumerable<string>>();
+
+            DictionariesForDifferentThreads.Add(dictionary);
         }
 
         

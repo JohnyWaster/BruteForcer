@@ -41,12 +41,15 @@ namespace BruteForcer
         }
 
         /// <summary>
-        /// makes dictionaries of passwords for each core from alphabet
+        /// Makes dictionaries of passwords for each thread from alphabet
         /// </summary>
         /// <param name="alphabet">set of characters, which can be included in password</param>
         /// <param name="minLength">min length of password</param>
         /// <param name="maxLength">max length of password</param>
         /// <param name="numberOfThreads">number of dictionaries for dividing entire dictionary of passwords, each dictionary for each core</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static IList<IEnumerable<string>> MakeDictionariesForSomeThreads(char[] alphabet, int minLength,
             int maxLength, int numberOfThreads)
         {
@@ -118,6 +121,154 @@ namespace BruteForcer
 
             return dictionariesForDifferentCores;
         }
+
+        /// <summary>
+        /// Makes dictionaries of passwords for each thread from different alphabets, where letters 
+        /// at each position can be from corresponding alphabets.
+        /// It means, than 1-st alphabet is used for letter at 1-st position, 2-nd alphabet for 2-nd position of password, etc...
+        /// If number of alphabets less than maxLength, last alphabet is used for the rest of letters.
+        /// If number of alphabets greater than maxLength, rest of alphabets are not used.
+        /// </summary>
+        /// <param name="alphabets">Set of alphabets, each alphabet is using for corresponding position in password</param>
+        /// <param name="minLength">Min length of password.</param>
+        /// <param name="maxLength">Max length of password.</param>
+        /// <param name="numberOfThreads">number of dictionaries for dividing entire dictionary of passwords, each dictionary for each thread</param>
+        /// <returns>List of sets of passwords, obtained from given alphabets. Each set for each thread.</returns>
+        public static IList<IEnumerable<string>> MakeDictionariesForSomeThreads(IList<char[]> alphabets, int minLength,
+            int maxLength, int numberOfThreads)
+        {
+            #region Validation of input parameters
+
+            if (numberOfThreads < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(numberOfThreads));
+            }
+            if (minLength < 0 || maxLength < 0)
+            {
+                throw new ArgumentException("length of password should be nonnegative");
+            }
+            //in this case we don't have anything to return
+            if (minLength == 0 && maxLength == 0)
+            {
+                return new List<IEnumerable<string>>();
+            }
+            if (minLength == 0)
+            {
+                minLength = 1;
+            }
+            if (minLength > maxLength)
+            {
+                throw new ArgumentException("minLength can't be greater than maxLength");
+            }
+            if (alphabets == null)
+            {
+                throw new ArgumentNullException();
+            }
+
+            if (!alphabets.Any())
+            {
+                throw new ArgumentException(nameof(alphabets) + " should contain at least one alphabet.");
+            }
+
+            foreach (var alph in alphabets)
+            {
+                if (alph == null)
+                {
+                    throw new NullReferenceException(nameof(alphabets) + " should not contain null references.");
+                }
+                if (!alph.Any())
+                {
+                    throw new ArgumentException(nameof(alphabets) + " contains empty alphabet.");
+                }
+            }
+
+            #endregion
+
+
+            var dictionariesForDifferentCores = new List<IEnumerable<string>>();
+
+            if (numberOfThreads == 1)
+            {
+                dictionariesForDifferentCores.Add(MakeDictionaryFromSomeAlphabets(alphabets, minLength, maxLength));
+            }
+
+            else
+            {
+                #region Remember min and max elements of alphabets and complete alphabets with last alphabet, if required.
+                //remember min and max elements of each alphabet
+                List<char> minElements = new List<char>();
+
+                List<char> maxElements = new List<char>();
+
+                foreach (var alph in alphabets)
+                {
+                    minElements.Add(alph.First());
+                    maxElements.Add(alph.Last());
+                }
+
+                //if number of alphabets less than maxLength
+                if (maxElements.Count < maxLength)
+                {
+                    var lastMaxElem = maxElements.Last();
+                    var lastMinElem = minElements.Last();
+
+                    //in this case use last alphabet for the rest letters
+                    while (maxElements.Count != maxLength)
+                    {
+                        maxElements.Add(lastMaxElem);
+                        minElements.Add(lastMinElem);
+
+                        alphabets.Add(alphabets.Last());
+                    }
+                }
+
+                #endregion
+
+                string minVal = new string(minElements.Take(minLength).ToArray());
+
+                //max value for first thread should begin from this value
+                var maxValList = new List<char>()
+                {
+                    alphabets[0][alphabets[0].Length / numberOfThreads]
+                };
+
+                string maxVal = new string(maxValList.Concat(maxElements.Skip(1)).ToArray());
+
+                for (int i = 1; i <= numberOfThreads; ++i)
+                {
+                    try
+                    {
+                        dictionariesForDifferentCores.Add(MakeDictionaryFromSomeAlphabets(alphabets, minVal, maxVal));
+                    }
+                    catch (ArgumentException)
+                    {
+                        throw new ArgumentException("Too much", nameof(numberOfThreads));
+                    }
+
+                    minVal = maxVal;
+                    if (i == numberOfThreads)
+                    {
+                        break;
+                    }
+                    if (i != numberOfThreads - 1)
+                    {
+                        //max value for first thread should begin from this value
+                        maxValList = new List<char>()
+                        {
+                            alphabets[0][(i+1)*alphabets[0].Length / numberOfThreads]
+                        };
+
+                        maxVal = new string(maxValList.Concat(maxElements.Skip(1)).ToArray());
+                    }
+                    else
+                    {
+                        maxVal = new string(maxElements.ToArray());
+                    }
+                }
+            }
+
+            return dictionariesForDifferentCores;
+        } 
 
         /// <summary>
         /// generate all possible values of password of required length
@@ -824,7 +975,7 @@ namespace BruteForcer
         /// If number of alphabets greater than maxLength, rest of alphabets are not used.
         /// If alphabets contain only one alphabet, method is equal to MakeDictionaryFromAlphabet.
         /// </summary>
-        /// <param name="alphabets">set of characters, which can be included in password</param>
+        /// <param name="alphabets">Set of alphabets, each alphabet is using for corresponding position in password</param>
         /// <param name="minPassword">min value of password</param>
         /// <param name="maxPassword">max value of password</param>
         /// <exception cref="ArgumentException"></exception>

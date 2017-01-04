@@ -499,6 +499,76 @@ namespace UnitTestProjectForBruteForcer
             {
                 IsTrue(e.Message.Contains("can not be obtained"));
             }
+
+            alphabets = new List<char[]>();
+
+            alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters.Concat(DictionaryOfPasswordsCreator.SmallEnglishLetters).ToArray());
+
+            alphabets.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters.Concat(DictionaryOfPasswordsCreator.Numbers).ToArray());
+
+            alphabets.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+            
+            myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, "Ca", "e1zzb");
+
+            //       len 2     len 3      len 4      len 5  d9zzz       e0zzz         e1zzz      
+            AreEqual(50*36 + 52*36*26 + 52*36*26*26 + 30*36*26*26*26 + 27*26*26*26 + 26*26*26 - 24, myDict.Count());
+
+        }
+
+        [Test]
+        public void MakeDictionatiesForSomeThreadsFromSomeAlphabetsTest()
+        {
+            var alphabets = new List<char[]>();
+
+            alphabets.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            var myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(alphabets, 1, 6, 4);
+
+            //AreEqual(10 + 10*26 + 10*26*26 + 10*26*26*10 + 10*26*26*10*26 + 10*26*26*10*26*26 + 3, myDict.Sum(a=>a.Count()));
+
+            IBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
+
+            var rightValue = "4Af3TR";
+
+            var foundValue = bf.BruteForceAsync(a => a, a => a == rightValue).Result;
+
+            AreEqual(rightValue, foundValue);
+        }
+
+        [Test]
+        public void BruteForceWithSomeAlphabetsTest()
+        {
+            var alphabets = new List<char[]>();
+
+            alphabets.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.Numbers);
+
+            alphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+            var myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 1, 6);
+
+            //AreEqual(10 + 10*26 + 10*26*26 + 10*26*26*10 + 10*26*26*10*26 + 10*26*26*10*26*26 + 3, myDict.Sum(a=>a.Count()));
+
+            IBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
+
+            var rightValue = "4Af3TR";
+
+            var foundValue = bf.BruteForceAsync(a => a, a => a == rightValue).Result;
+
+            AreEqual(rightValue, foundValue);
         }
     }
 }
