@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Threading;
 using NUnit.Framework;
 using static NUnit.Framework.Assert;
+using BruteForcer;
 
 namespace UnitTestProjectForBruteForcer
 {
@@ -108,7 +109,7 @@ namespace UnitTestProjectForBruteForcer
 
             IList<IEnumerable<string>> myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(smallEnglishLetters, 1, maxLength: 10, numberOfThreads: 1);
 
-            IBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
+            BruteForcer.BruteForcer bf = new BruteForcer.BruteForcer(myDict);
 
             var rightValue = "zaswa";
 
@@ -124,7 +125,7 @@ namespace UnitTestProjectForBruteForcer
 
             IList<IEnumerable<string>> myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(smallEnglishLetters, 1, 3, 15000);
 
-            IBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
+            BruteForcer.BruteForcer bf = new BruteForcer.BruteForcer(myDict);
 
             var rightValue = "bc";
 
@@ -534,7 +535,7 @@ namespace UnitTestProjectForBruteForcer
 
             //AreEqual(10 + 10*26 + 10*26*26 + 10*26*26*10 + 10*26*26*10*26 + 10*26*26*10*26*26 + 3, myDict.Sum(a=>a.Count()));
 
-            IBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
+            BruteForcer.BruteForcer bf = new BruteForcer.BruteForcer(myDict);
 
             var rightValue = "4Af3TR";
 
@@ -562,7 +563,7 @@ namespace UnitTestProjectForBruteForcer
 
             //AreEqual(10 + 10*26 + 10*26*26 + 10*26*26*10 + 10*26*26*10*26 + 10*26*26*10*26*26 + 3, myDict.Sum(a=>a.Count()));
 
-            IBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
+            BruteForcer.BruteForcer bf = new BruteForcer.BruteForcer(myDict);
 
             var rightValue = "4Af3TR";
 

@@ -35,8 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="DictionaryOfPasswordsCreator.cs" />
-    <Compile Include="IBruteForcer.cs" />
-    <Compile Include="MultiCoreDictionaryBruteForcer.cs" />
+    <Compile Include="BruteForcer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

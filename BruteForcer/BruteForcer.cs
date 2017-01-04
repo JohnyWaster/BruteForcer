@@ -10,7 +10,7 @@ namespace BruteForcer
     /// <summary>
     /// Helps to make dictionary of passwords from alphabet and pick over them asynchronously
     /// </summary>
-    public class MultiThreadDictionaryBruteForcer : IBruteForcer
+    public class BruteForcer
     {
         private IList<IEnumerable<string>> _dictionariesForDifferentThreads;
 
@@ -34,7 +34,7 @@ namespace BruteForcer
         /// Constructor, which sets dictionaries for look through.
         /// </summary>
         /// <param name="listOfDictionaries">list of dictionaries, where password will be seeked</param>
-        public MultiThreadDictionaryBruteForcer(IList<IEnumerable<string>> listOfDictionaries)
+        public BruteForcer(IList<IEnumerable<string>> listOfDictionaries)
         {
             if (listOfDictionaries == null)
             {
@@ -57,7 +57,7 @@ namespace BruteForcer
         /// Constructor, which sets dictionary for look through for one thread.
         /// </summary>
         /// <param name="dictionary">dictionary, where password will be seeked.</param>
-        public MultiThreadDictionaryBruteForcer(IEnumerable<string> dictionary)
+        public BruteForcer(IEnumerable<string> dictionary)
         {
             if (dictionary == null)
             {
