@@ -1,0 +1,137 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BruteForcer
+{
+	/// <summary>
+    /// Different use cases of BruteForcer and DictionaryOfPasswordsCreator classes
+    /// are described in this file.
+    /// </summary>
+    class Example
+    {
+	    public static async void ExamplesMethod()
+	    {
+			//*******************************
+			//DictionaryOfPasswordsCreator examples
+			//********************************
+
+	        //the simplest usage case: to get all possible combinations of english letters,
+			//where length of combination greater than 1 and less than 9 as IEnumerable of strings
+	        char[] alphabet = DictionaryOfPasswordsCreator.SmallEnglishLetters;
+
+	        IEnumerable<string> dictionary = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alphabet, 1, 8);
+
+			//if you need the same thing, but result should be devided into 5 parts, as IList of 
+			//5 IEnumerables (for example for multithreading usage).
+	        IList<IEnumerable<string>> dictionaryAsList = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(alphabet, 1, 8, 5);
+
+			
+
+			//if you want to get all words of length 6, where small english letters are used for
+			//the first 4 letters of the word and numbers are used for the 5-th and 6-th positions.
+			List<char[]> listOfAlphabets = new List<char[]>();
+
+	        for (int i = 0; i < 4; ++i)
+	        {
+	            listOfAlphabets.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+	        }
+
+			listOfAlphabets.Add(DictionaryOfPasswordsCreator.Numbers);
+
+			//now listOfAlphabets contains 5 alphabets, so if you want to generate words of length
+			//greater than 5, 5-th alphabet will be used for the rest of positions in the word. 
+
+	        dictionary = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(listOfAlphabets, 6, 6);
+
+            //if you need the same thing, but result should be devided into 4 parts, as IList of 
+            //4 IEnumerables (for example for multithreading usage).
+
+	        dictionaryAsList = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(listOfAlphabets, 6, 6, 4);
+
+
+
+			//if you want to get all words between "Artur" and "Walter"(in alphabetical order),
+			//you need to set correctly list of alphabets(for the first letter is used big letter and
+			//for the rest of letters are used small letters).
+			listOfAlphabets = new List<char[]>();
+
+			listOfAlphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters);
+
+			listOfAlphabets.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+	        dictionary = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(listOfAlphabets, "Artur", "Walter");
+
+			//if you need the same thing but only with small letters
+
+	        alphabet = DictionaryOfPasswordsCreator.SmallEnglishLetters;
+
+	        dictionary = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alphabet, "artur", "walters");
+
+
+
+            //if you don't want to pass alphabet as array of chars and get result passwords as strings,
+            //you can use generic method:
+            string[] customAlphabet = new int[16].Select((a, i) => Convert.ToString(i, 16)).ToArray();
+
+            IEnumerable<IList<string>> hexPairs= DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(customAlphabet, 4, 4);
+
+
+
+            //if you want to get all possible words of length less than 10, which contain 
+            //substring"frog":
+
+			//word contain only small englisg letters
+	        alphabet = DictionaryOfPasswordsCreator.SmallEnglishLetters;
+
+	        dictionary = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alphabet, 1, 9, "frog");
+
+			//word can contain big english letter at first position and it can contain not only "frog", 
+			//but "Frog" too.
+			listOfAlphabets = new List<char[]>();
+
+			//first letter can be big or small
+			listOfAlphabets.Add(DictionaryOfPasswordsCreator.BigEnglishLetters.Concat(DictionaryOfPasswordsCreator.SmallEnglishLetters).ToArray());
+
+			//rest of letters are small
+			listOfAlphabets.Add(DictionaryOfPasswordsCreator.SmallEnglishLetters);
+
+	        dictionary = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(listOfAlphabets, 1, 9, "frog");
+
+            dictionary = dictionary.Concat(DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(listOfAlphabets, 1, 9, "Frog"));
+
+            //note: this method of generation words, which contain required substring, is much faster,
+            //than generation of whole dictionary and then filtering.
+
+
+            //*************************************
+            //BruteForcerExamples
+            //*************************************
+
+            //if you want to test someMethod, which consumes string as input parameter 
+			//and returns bool, with a huge amount of different values of this parameter
+	        Func<string, bool> someMethod = s => s == "crazyfrog";
+
+			BruteForcer bf = new BruteForcer(dictionary);
+
+	        string key = await bf.BruteForceAsync(someMethod, s => s);
+
+
+
+			//if you want to make it faster, you can make list of dictionaries
+			//and picking over will be divided into number of threads, equal to number of 
+			//dictionaries
+
+	        dictionaryAsList =
+	            DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(
+	                DictionaryOfPasswordsCreator.SmallEnglishLetters, 1, 9, 6);
+
+	        bf.DictionariesForDifferentThreads = dictionaryAsList;
+
+			//now the whole dictionary will be divided into 6 threads
+	        key = await bf.BruteForceAsync(someMethod, s => s);	
+	    }
+    }
+}

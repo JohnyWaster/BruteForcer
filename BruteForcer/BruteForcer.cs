@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace BruteForcer
 {
     /// <summary>
-    /// Helps to make dictionary of passwords from alphabet and pick over them asynchronously
+    /// Helps to pick over dictionary of passwords asynchronously.
     /// </summary>
     public class BruteForcer
     {
@@ -157,19 +157,19 @@ namespace BruteForcer
         /// Pick over all possible passwords in asynchronous way
         /// </summary>
         /// <typeparam name="T">type of value, which is returned by function, which makes one effort of password, and consumed by predicate, which determines is effort successfull</typeparam>
-        /// <param name="AttemptOfPassword">function, which makes one effort of password</param>
-        /// <param name="HasSuccess">predicate, which determines, if password is right</param>
+        /// <param name="attemptOfPassword">function, which makes one effort of password</param>
+        /// <param name="hasSuccess">predicate, which determines, if password is right</param>
         /// <param name="ct">token for cancellation</param>
         /// <returns>right password or null, if all dictionary was picked over and right password was not found</returns>
-        public async Task<string> BruteForceAsync<T>(Func<string, T> AttemptOfPassword, Predicate<T> HasSuccess, CancellationToken ct)
+        public async Task<string> BruteForceAsync<T>(Func<string, T> attemptOfPassword, Predicate<T> hasSuccess, CancellationToken ct)
         {
-            if (AttemptOfPassword == null)
+            if (attemptOfPassword == null)
             {
-                throw new ArgumentNullException(nameof(AttemptOfPassword));
+                throw new ArgumentNullException(nameof(attemptOfPassword));
             }
-            if (HasSuccess == null)
+            if (hasSuccess == null)
             {
-                throw new ArgumentNullException(nameof(HasSuccess));
+                throw new ArgumentNullException(nameof(hasSuccess));
             }
 
             //list for storing tasks for each thread
@@ -193,9 +193,9 @@ namespace BruteForcer
                                 break;
                             }
 
-                            T result = AttemptOfPassword(password);
+                            T result = attemptOfPassword(password);
 
-                            if (HasSuccess(result) == true)
+                            if (hasSuccess(result) == true)
                             {
                                 rightPassword = password;
                                 break;

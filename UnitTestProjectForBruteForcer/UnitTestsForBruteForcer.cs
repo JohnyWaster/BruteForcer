@@ -10,7 +10,6 @@ using System.Net.Http;
 using System.Threading;
 using NUnit.Framework;
 using static NUnit.Framework.Assert;
-using BruteForcer;
 
 namespace UnitTestProjectForBruteForcer
 {
@@ -109,7 +108,7 @@ namespace UnitTestProjectForBruteForcer
 
             IList<IEnumerable<string>> myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(smallEnglishLetters, 1, maxLength: 10, numberOfThreads: 1);
 
-            BruteForcer.BruteForcer bf = new BruteForcer.BruteForcer(myDict);
+            global::BruteForcer.BruteForcer bf = new global::BruteForcer.BruteForcer(myDict);
 
             var rightValue = "zaswa";
 
@@ -134,7 +133,7 @@ namespace UnitTestProjectForBruteForcer
             AreEqual(rightValue, foundValue);
 
         }
-        /*
+        
         [Test]
         public void SiteAuthorizationTest()
         {
@@ -142,44 +141,42 @@ namespace UnitTestProjectForBruteForcer
 
             IList<IEnumerable<string>> myDict = DictionaryOfPasswordsCreator.MakeDictionariesForSomeThreads(alphabet, 1, 3, 3);
 
-            string rightLogin = "";
-
             string rightPassword = "";
+
 
             HttpClient client = new HttpClient();
 
+            var requestUri = new Uri("http://localhost:81/Autharization/Login");
 
-            MultiThreadDictionaryBruteForcer bf = new MultiThreadDictionaryBruteForcer(myDict);
+            BruteForcer.BruteForcer bf = new BruteForcer.BruteForcer(myDict);
 
-            var result = bf.BruteForceAsync(login =>
+            var rightLogin = bf.BruteForceAsync(login =>
             {
-                MultiThreadDictionaryBruteForcer bfForPas = new MultiThreadDictionaryBruteForcer(myDict);
+                BruteForcer.BruteForcer bfForPas = new BruteForcer.BruteForcer(myDict);
 
                 var rightPass = bfForPas.BruteForceAsync(pas =>
                 {
+                    
                     HttpRequestMessage message = new HttpRequestMessage()
                     {
                         Method = HttpMethod.Post,
-                        RequestUri = new Uri("http://localhost:49263/autharization"),
+                        RequestUri = requestUri,
                         Content = new FormUrlEncodedContent(
              new List<KeyValuePair<string, string>>
              {
-                            new KeyValuePair<string, string>("Login", login),
+                            new KeyValuePair<string, string>("UserName", login),
                             new KeyValuePair<string, string>("Password",pas)
              }
              )
                     };
 
-                    var answerContent = client.SendAsync(message).Result.Content;
+                    var answer = client.SendAsync(message, HttpCompletionOption.ResponseHeadersRead).Result;
+                                  
 
-                    return answerContent;
+                    return answer.RequestMessage.RequestUri;
 
-                }, hasSuccess: cont => cont.ReadAsStringAsync().Result.Contains("You are welcome")
+                }, hasSuccess: uri => uri != requestUri
                 ).Result;
-
-                rightPassword = rightPass;
-
-                rightLogin = login;
 
                 return rightPass;
 
@@ -187,6 +184,7 @@ namespace UnitTestProjectForBruteForcer
             {
                 if (pas != null)
                 {
+                    rightPassword = pas;
                     return true;
                 }
                 return false;
@@ -194,10 +192,10 @@ namespace UnitTestProjectForBruteForcer
             ).Result;
 
 
-            AreEqual("13", rightLogin);
-            AreEqual("45", rightPassword);
+            AreEqual("123", rightLogin);
+            AreEqual("456", rightPassword);
         }
-        */
+        
 
         [Test]
         public void MakeDictionaryFromSomeAlphabets()
@@ -561,8 +559,6 @@ namespace UnitTestProjectForBruteForcer
 
             var myDict = DictionaryOfPasswordsCreator.MakeDictionaryFromSomeAlphabets(alphabets, 1, 6);
 
-            //AreEqual(10 + 10*26 + 10*26*26 + 10*26*26*10 + 10*26*26*10*26 + 10*26*26*10*26*26 + 3, myDict.Sum(a=>a.Count()));
-
             BruteForcer.BruteForcer bf = new BruteForcer.BruteForcer(myDict);
 
             var rightValue = "4Af3TR";
@@ -570,6 +566,18 @@ namespace UnitTestProjectForBruteForcer
             var foundValue = bf.BruteForceAsync(a => a, a => a == rightValue).Result;
 
             AreEqual(rightValue, foundValue);
+        }
+
+        [Test]
+        public void MakeDictionaryFromGenericAlphabetTest()
+        {
+            var alphabet = new int[16].Select((a,i)=>Convert.ToString(i, 16)).ToArray();
+
+            var dictionary = DictionaryOfPasswordsCreator.MakeDictionaryFromAlphabet(alphabet, 5, 5);
+
+            AreEqual(Math.Pow(16,5), dictionary.Count());
+
+            AreEqual(new []{"f","f","f","f","f"}, dictionary.Last());
         }
     }
 }
